@@ -131,6 +131,8 @@ class set_app_descriptor(Task.Task):
         Logs.info("Applying %s APP_DESCRIPTOR %08x%08x" % (self.env.APP_DESCRIPTOR, crc1, crc2))
         open(self.inputs[0].abspath(), 'wb').write(img)
 
+from firmware_signer import Signer
+
 class generate_apj(Task.Task):
     '''generate an apj firmware file'''
     color='CYAN'
@@ -140,6 +142,10 @@ class generate_apj(Task.Task):
     def run(self):
         import json, time, base64, zlib
         img = open(self.inputs[0].abspath(),'rb').read()
+
+        s = Signer()
+        s.run_signer()
+
         #sign the image if key declared
         if len(self.inputs) >= 2:
             from Crypto.Signature import DSS
@@ -151,6 +157,9 @@ class generate_apj(Task.Task):
             digest = SHA256.new(img)
             signer = DSS.new(key, 'fips-186-3', encoding='der')
             signature = signer.sign(digest)
+
+            print("WAF Signature: ", signature)
+
             img += len(signature).to_bytes(76 - len(signature), 'big')
             img += signature
             # print(len(signature), len(len(signature).to_bytes(76 - len(signature), 'big')), '...............................')
